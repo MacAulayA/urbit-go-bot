@@ -205,5 +205,118 @@
     =/  index=@ud  (need (find " " coord))
     [(slav %ud (crip (scag index coord))) (slav %ud (crip (slag +(index) coord)))]
   (silt stones-decoded)
+::
+::
+::  I'm adding svg conversion stuff here
+::  (on the basis of consistency and lack
+::  of precedding law suits)
+::
+++  game-to-svg
+  |=  game=go-game
+  ^-  @t
 
+  :: Build up an svg file piece by piece
+
+  ::  svg 'header'
+  =/  header  "<svg height='50vh' viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'>"
+
+  ::  svg 'footer'
+  =/  footer  "</svg>"
+
+  ::  Background box for svg:
+  =/  svg-bg  "<rect x='0' y='0' width='200' height='100' fill='#ffff66'></rect>"
+
+  ::  Background box for text:
+  =/  txt-bg-border  "<polygon points='100,0 199,0 199,99 100,99' fill-opacity='0'></polygon>"
+
+  ::  Grid for board:
+  =/  grid=tape  (create-board-grid n.game-board.game)
+
+  ::  Text items for sidebar
+  =/  text=tape  (create-sidebar-text game)
+
+  ::  Stones placement
+  =/  stones=tape  (create-stones-text game)
+
+  =/  svg  (crip ;:(weld header svg-bg txt-bg-border grid stones text footer))
+  svg
+::
+::  Create the svg for stones on board
+++  create-stones-text
+  |=  game=go-game
+  ^-  tape
+  =/  size  n.game-board.game
+  =/  max=@rs  (sun:rs (sub size 1))
+  =/  step=@rs  .5
+  =/  offset=@rs  (sub (div:rs (sub:rs .100 (mul:rs max .5)) .2) step)
+
+  =/  txt-map  (~(urn by m.game-board.game) |=([k=[@ud @ud] v=piece] "<circle cx={<(coord -.k step offset)>} cy={<(coord +.k step offset)>} r='2.5' fill={<`@t`v>}></circle>"))
+  =/  val-list=(list tape)  ~(val by txt-map)  :: list of all text elements generated above
+  =/  val-tape  `tape`(zing val-list)
+  val-tape
+::
+::  Create the svg coordinates for the sidebar
+++  coord
+  |=  [coord=@ud step=@rs offset=@rs]
+  ^-  @t
+  =/  corrected-coord  (add:rs offset (mul:rs (sun:rs coord) step))
+  =/  tape-coord  (oust [0 1] (scow %rs corrected-coord))
+  (crip tape-coord)
+::
+++  create-sidebar-text
+  |=  game=go-game
+  ^-  tape
+  
+  ::  Title
+  =/  title  ;:(weld "<text x='110' y='12' fill='black' style='font-family:sans; font-size:8px;'>" (trip name.game) "</text>")
+  =/  sub-title  ;:(weld "<text x='120' y='22' fill='black' style='font-family:sans; font-size:4px;'>" (scow %da game-id.game) "</text>")
+  
+  ::  Other info
+  =/  i1  (weld "<text x='110' y='35' fill='black' style='font-family:serif; font-size: 5px;'>Host: " (scow %p host.game))
+  =/  i2  ;:(weld "<tspan x='110' y='41'>Black: " (scow %p black.game) "</tspan>")
+  =/  i3  ;:(weld "<tspan x='110' y='47'>White: " (scow %p white.game) "</tspan>")
+  =/  i4  ;:(weld "<tspan x='110' y='53'>Komi: " (scow %rs komi.game) "</tspan>")
+  =/  i5  ;:(weld "<tspan x='110' y='59'>Handicap: " (scow %ud handicap.game) "</tspan>")
+  
+  =/  i7  ?~(result.game "" ;:(weld "<tspan x='110' y='71' fill='red'>" (scow %p +>+>.result.game) " wins!</tspan>"))
+  =/  i8  ?~(result.game "" "<tspan x='110' y='77'>Score:</tspan>")
+  =/  i9  ?~(result.game "" ;:(weld "<tspan x='120' y='83'> White:" (scow %rs +>-.result.game) "</tspan>"))
+  =/  i10  ?~(result.game "" ;:(weld "<tspan x='120' y='89'> Black:" (scow %rs +<.result.game) "</tspan>"))
+  =/  i11  "</text>"
+  =/  info  ;:(weld i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11)
+
+  ::  Turn (black on odd, white on even)
+    =/  t  turn.game
+  =/  turn  ?:(=((mod t 2) 1) "black" "white")
+  =/  circle  ;:(weld "<circle cx='170' cy='75' r='15' stroke='gold' stroke-width='1' fill='" turn "'></circle>")
+ 
+  ::  Return all text welded together
+  ;:(weld title sub-title info circle)
+
+++  create-board-grid
+  ::  Create the svg for the grid itself
+  |=  size=@ud   :: should be 19, 13 or 9
+
+  ^-  tape
+  =/  max=@rs  (sun:rs (sub size 1))
+  =/  offset=@rs  (div:rs (sub:rs .100 (mul:rs max .5)) .2)
+  =/  step=@rs  .5
+  =/  s=@rs  offset
+  =/  start=tape  (cv offset)
+  =/  end=tape  (cv (add:rs offset (mul:rs step max)))
+  =/  grid  ""
+  |- 
+  ?:  (gth s (add:rs offset (mul:rs step max)))
+    grid
+  %=  $
+    s        (add:rs s step)  :: increase by 5 each time
+    grid     ;:(weld grid "<line x1='" start "' y1='" (cv s) "' x2='" end "' y2='" (cv s) "' stroke='black' stroke-width='0.25'></line><line x1='" (cv s) "' y1='" start "' x2='" (cv s) "' y2='" end "' stroke='black' stroke-width='0.25'></line>")
+  ==
+
+::  minimised function name to convert @rs to tape
+++  cv
+  |=  rs=@rs
+  ^-  tape
+  (oust [0 1] (scow %rs rs))
+::
 --
