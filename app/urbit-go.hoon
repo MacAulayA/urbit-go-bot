@@ -155,15 +155,11 @@
       =?  color  =(white.game src.bowl)  %white :: if moving player is white, change color to white
       =/  output=[@tas (unit go-game)]  (make-move game position.action color)
       ?~  +3.output
-        ::~|  +2.output  !! :: output error
-        :: ASM - original line above.  make-move returns %error values for various scenarios
-        :: as a [%error ~] noun.  +2.ouput is printed to the stack trace ( ~| ) if +3.output is ~
-        :: change to return the error value and `this
-        ~&  "returning value: {<+2.output>} via a poke-ack"
-        :_  this
-        :::~  [%give %poke-ack ~]
-        :~  [%give %poke-ack `~[leaf+"foobar: " leaf+"{<+2.output>}"]]
-        ==
+        ~|  +2.output  !! :: output error
+      ::  ~&  "returning value: {<+2.output>} via a poke-ack"
+      ::  :_  this
+      ::  :~  [%give %poke-ack `~[leaf+"Urbit-go error: {<+2.output>}"]]
+      ::  ==
       =.  game  (need +3.output)
       =.  pass.game  0 :: set pass to 0 since a move was done
       =.  active-games  (~(put by active-games) id.action game) :: otherwise update game state
