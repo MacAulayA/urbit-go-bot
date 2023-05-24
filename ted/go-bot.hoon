@@ -17,7 +17,7 @@
       extract
   ::
   ::  Write our own poke so that we can
-  ::  get data send with a %poke-ack/%nack
+  ::  get data send with a %poke-ack/%nack ????
   ::  (based on strandio.hoon raw-poke)
   ::
   ++  custom-poke
@@ -129,31 +129,23 @@
   :: "x y" to [x y]
   =/  posn  [`@ud`(slav %ud (crip (scag (need (find " " t)) t))) `@ud`(slav %ud (crip (slag (add 1 (need (find " " t))) t)))] 
 
-::original---
+::original without errors returned---
 ::  ;<  our=@p   bind:m  get-our
 ::  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%move id=game-id-m position=posn])])
+::  =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
+::  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
 ::-----------
 
   ;<  our=@p    bind:m  get-our
   ;<  now=@da   bind:m  get-time
   ;<  byk=beak  bind:m  get-beak
 
-  ::~&  "taking poke..."
-  ::;<  =vase  bind:m  ((handle ,vase) (take-poke %urbit-go-action))
-  ::~&  "have-taken poke, waiting... ?"
-
   ~&  "kicking off a separate thread to watch for our poke"
-  ::;<  ted=tid:spider    bind:m  (start-thread %go-poke)
   ;<  ted=tid:spider    bind:m  (start-thread-with-args [byk %go-poke !>([%move id=game-id-m position=posn])])
   ~&  "ted:"
-  ~&  ted  :: this works when the thread simply checks the time... it's a start...
-           :: not sure how much it helps, since it only returns a thread-id (technically [%done tid])
+  ~&  ted  :: this works when the thread simply checks the time, but not with a poke.
 
-
-::  ;<    =thread-result  bind:m  (await-thread [%go-poke *vase])  :: with thread running take-poke
-
-::  Doesn't work, even if we don't do the poke, but just get the time in the go-poke thread
-::  it simply never returns a result, still failing on the take-fact I assume.
+::  Doesn't work, even if we don't do the poke, it simply never returns a result, still failing on the take-fact I assume.
 ::  ~&  "running await thread to run %move"
 ::  ;<    =thread-result  bind:m  (await-thread %go-poke !>([%move id=game-id-m position=posn]))
 ::  ~&  "thread-result {<thread-result>}"
@@ -167,82 +159,6 @@
 ::  ~&  vase
   =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
   (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
-
-
-:: *** DOESN'T WORK - the take-fact call always dies silently, and never returns a cage
-:::: I think this is for running via an agent??  How do we send cards and get results????
-::  ;<  our=@p   bind:m  get-our
-::  ;<  eny=@uv  bind:m  get-entropy
-::  ;<  now=@da  bind:m  get-time
-::  ;<  byk=beak  bind:m  get-beak
-::  =/  tid  (scot %ta (cat 3 'go-bot_' (scot %uv (sham eny))))
-:::: pass card to watch spider (and get results ??)
-:::: pass card to start go-poke thread
-:: :: dojo msg: "poke failed from %urbit-go on wire /move", so let's watch that instead
-::  =/  c0  [%pass /move %agent [our %urbit-go] %watch /thread-result] 
-::  =/  c1  [%pass /watch-go-bot %agent [our %spider] %watch /thread-result/[tid]]
-::  =/  c2  [%pass /watch-go-bot %agent [our %spider] %poke %spider-start !>([~ `tid byk(r da+now) %go-poke !>([%move id=game-id-m position=posn])])]
-::  ;<  ~        bind:m  (send-raw-cards [c0 c2 c1 ~])
-::  ~&  "taking fact, waiting for cage"
-::  ::;<  =cage    bind:m  (take-fact /watch-go-bot)
-::  ::;<  =cage    bind:m  (take-fact /thread-result/[tid])
-::  ;<  =cage    bind:m  (take-fact /move)
-::  ~&  "did we find the cage?"
-::  ~&  p.cage
-::  ?+  p.cage  ~|([%strange-thread-result 'broken'] !!)
-::    %thread-fail  
-::       ~&  "**** THREAD FAIL ****"
-::      (pure:m !>(['ERROR!!!' vase.bird]))
-::    %thread-done
-::       ~&  "**** THREAD DONE ****"  
-::      ;<  now=@da  bind:m  get-time
-::      =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
-::      (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
-::::      (pure:m %& q.cage)
-::    ==
-
-::  This seems like the most correct way to do it, but await-thread fails internally on the take-fact, just like
-::  everything else.
-:: ******* RETRY THIS - THERE IS A MISTAKE HERE, should be (await-thread [%go-poke !>([%move ...])])
-  ::;<  our=@p   bind:m  get-our
-  ::::;<  res=thread-result  bind:m  (await-thread %go-poke !>([%move id=game-id-m position=posn]))
-  ::;<    =thread-result  bind:m  (await-thread %go-poke !>([%move id=game-id-m position=posn]))
-  ::~&  "*** have thread result"
-  ::?.  =(%& -.thread-result) ::upside down for now
-  ::  :: error
-  ::  =/  mess  +.thread-result  ::this is @
-  ::  ;<  ~  bind:m  (flog-text "%go-poke failed (%urbit0-go): {<mess>}")
-  ::  ::;<  ~  bind:m  (flog-text "%go-poke failed (%urbit0-go): {(trip -.mess)}")
-  ::  (pure:m !>(['Something went wrong' vase.bird]))
-:: all good
-
-
-  :: this is not the way, instead call *another thread* which will give a %fail
-  :: result if the poke inside it fails.
-  ::;<  v=vase   bind:m  (custom-poke [our %urbit-go] [%urbit-go-action !>([%move id=game-id-m position=posn])])
-  ::=/  output  !<(strand-input:strand v)
-  ::~&  "finally... sort of... {<in.output>}"
-
-  ::;<  msg=vase  bind:m  ((handle ,vase) (take-poke %urbit-go-action))
-  ::~&  "msg: {<msg>}"
-
-  :: [%done value=[p=@tas q=[#t q=*]]]
-  ::;<  msg=cage  bind:m  (take-fact /poke)
-  ::=/  response=tape  ?+  p.msg  "**default response**"   
-  ::    %thread-done
-  ::  "** done **"
-  ::    %thread-fail
-  ::  "** fail **"
-  ::==
-
-  ::;<  msg=vase  bind:m  (take-poke %urbit-go-action)
-  ::=/  message=tape  !<(tape msg)
-  ::%-  (slog leaf+"{message}..." ~)
-  
-
-::  ;<  now=@da  bind:m  get-time
-::  =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
-::  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
 ::
 ::  Pass on your turn
     %pass
