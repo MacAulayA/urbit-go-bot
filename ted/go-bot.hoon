@@ -16,29 +16,36 @@
       =/  extract  ?~  (find " " rem)  `tape`rem  `tape`(scag (need (find " " rem)) rem)
       extract
   ::
-  ::  Write our own poke so that we can
-  ::  get data send with a %poke-ack/%nack ????
-  ::  (based on strandio.hoon raw-poke)
+  ::  Write our own await-thread poke so that we can
+  ::  get data from our custom poke in go-poke.hoon
+  ::  from https://developers.urbit.org/reference/arvo/threads/examples/child-thread
   ::
-  ++  custom-poke
-    |=  [=dock =cage]
-    =/  m  (strand ,vase)
-    ^-  form:m
-    =/  =card:agent:gall  [%pass /poke %agent dock %poke cage]
-    ;<  ~  bind:m  (send-raw-card card)
-    =/  m  (strand ,vase)
-    ^-  form:m
-    |=  tin=strand-input:strand
-    ?+  in.tin  `[%skip ~]
-        ~
-      `[%wait ~]
-    ::
-        [~ %agent * %poke-ack *]
-      ?.  =(/poke wire.u.in.tin)
-        `[%skip ~]
-      `[%done !>(tin)]
-    ==
-  ::
+++  custom-await-thread
+  |=  [file=term args=vase]
+  =/  m  (strand ,vase)
+  ^-  form:m
+
+  ;<  =bowl:spider  bind:m  get-bowl
+  =/  tid  `@ta`(cat 3 'strand_' (scot %uv (sham file eny.bowl)))
+  ;<  ~             bind:m  (watch-our /awaiting/[tid] %spider /thread-result/[tid])
+  ;<  ~             bind:m  %-  poke-our
+                            :*  %spider
+                                %spider-start
+                                !>([`tid.bowl `tid byk.bowl(r da+now.bowl) file args])
+                            ==
+  ;<  =cage         bind:m  (take-fact /awaiting/[tid])
+  ;<  ~             bind:m  (take-kick /awaiting/[tid])
+  ?+  p.cage  ~|([%strange-thread-result p.cage file tid] !!)
+    %thread-done  
+  (pure:m !>([%done '']))                                       :: return %done so we can ?+ against this easily 
+    %thread-fail
+  :: q.q.cage is a tang (list tank) in the form [%poke-fail <tang returned from thread>]
+  =/  err  (tang q.q.cage)
+  =/  err-tank  (tank (snag 1 err))
+  =/  err-tape  (slag 5 ~(ram re err-tank))                     :: [%leaf "#### occupied ####"] to " occupied ####"
+  =/  err-cord  (crip (scag (sub (lent err-tape) 5) err-tape))  :: " occupied ####" to 'occupied' 
+  (pure:m !>([%fail err-cord]))                                 :: return failure reason rather than fail the thread
+==
 --
 =/  m  (strand ,vase)
 ^-  thread:spider
@@ -55,11 +62,9 @@
 
 ?.  =(msg-origin our-ship)
   :: eject Mailman, eject!!  (this message comes from someone else)
-  ~&  "Message origin not our ship - ignoring"
   !!
 ::  Need to ensure we're only interacting with our own ship's urbit-go
 =/  text-tape  (trip text.bird)
-~&  "Message origin is our ship - running thread..."
 ::  Extract game action from input text.
 =/  action-tape  (parse-input "%" text-tape "error")
 =/  game-action  `@tas`(slav %tas (crip action-tape))
@@ -121,44 +126,33 @@
 ::
 ::  Make a move
     %move
-  =/  game-id-m  `@dau`(slav %da (crip (weld "~" (parse-input "~" text-tape "error"))))
+  ::=/  game-id-m  `@dau`(slav %da (crip (weld "~" (parse-input "~" text-tape "error"))))
+  =/  game-id-t  (crip (weld "~" (parse-input "~" text-tape "error")))
+  =/  game-id-m  `@dau`(slav %da game-id-t)
+
+  :: Scry for game data in order to get name of host
+  ;<  game=go-game:urbit-go  bind:m  (scry [go-game:urbit-go] `path`['gx' 'urbit-go' 'game' game-id-t 'noun' ~])
 
   :: get move position
-  =/  posn-tape  (slag (need (find "[" text-tape)) text-tape)                                    :: position data "[x y]"
-  =/  t  `tape`(flop (snip (flop (snip posn-tape))))                                             :: "[x y]" to "x y"
+  =/  posn-tape  (slag (need (find "[" text-tape)) text-tape)        :: position data "[x y]"
+  =/  t  `tape`(flop (snip (flop (snip posn-tape))))                 :: "[x y]" to "x y"
   :: "x y" to [x y]
   =/  posn  [`@ud`(slav %ud (crip (scag (need (find " " t)) t))) `@ud`(slav %ud (crip (slag (add 1 (need (find " " t))) t)))] 
 
-::original without errors returned---
-::  ;<  our=@p   bind:m  get-our
-::  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%move id=game-id-m position=posn])])
-::  =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
-::  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
-::-----------
-
-  ;<  our=@p    bind:m  get-our
-  ;<  now=@da   bind:m  get-time
-  ;<  byk=beak  bind:m  get-beak
-
-  ~&  "kicking off a separate thread to watch for our poke"
-  ;<  ted=tid:spider    bind:m  (start-thread-with-args [byk %go-poke !>([%move id=game-id-m position=posn])])
-  ~&  "ted:"
-  ~&  ted  :: this works when the thread simply checks the time, but not with a poke.
-
-::  Doesn't work, even if we don't do the poke, it simply never returns a result, still failing on the take-fact I assume.
-::  ~&  "running await thread to run %move"
-::  ;<    =thread-result  bind:m  (await-thread %go-poke !>([%move id=game-id-m position=posn]))
-::  ~&  "thread-result {<thread-result>}"
-
-::  ~&  "running poke..."
-::  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%move id=game-id-m position=posn])])
-::    ~&  "have poked, running take-poke.."
-::  ;<  =vase  bind:m  ((handle ,vase) (take-poke %urbit-go-action))
-::  ~&  "take-poke has run."
-::  ~&  "vase is: "
-::  ~&  vase
-  =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
-  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
+  ;<  our=@p        bind:m  get-our
+  ;<  now=@da       bind:m  get-time
+  :: Always send moves to the host, replicating the logic in the app.
+  ;<  ted-res=vase  bind:m  (custom-await-thread %go-poke !>([host.game !>([%move id=game-id-m position=posn])]))
+  =/  result  !<([term cord] ted-res)
+  ?+    -.result  ~|  %thread-fail  !! 
+      %done
+    =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
+    (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
+    ::
+      %fail
+    =/  move-msg  (crip ;:(weld "Go: Sorry " (scow %p our) ", illegal move: " (trip +.result)))
+    (pure:m !>([move-msg vase.bird]))
+  ==
 ::
 ::  Pass on your turn
     %pass
@@ -186,23 +180,25 @@
 ::
 ::  Get help on actions
     %help
-    ::  Not sure how to get a newline character!
-  =/  h1  "Available actions are: %challenge, %accept, %decline, %withdraw, %move, %pass, %resign, and %look."
-  =/  h2  "Challenge: /ugo %challenge ~zod name=@t komi=@rs handicap=@ud size=@ud order=@tas"
-  =/  h3  "           'order' is the order of play, and can be %random, %challenger, or %challenged"
-  =/  h4  "           name, komi, handicap, size and order will use default values if not supplied"
-  =/  h5  "Accept:    /ugo %accept ~zod"
-  =/  h6  "Decline:   /ugo %decline ~zod"
-  =/  h7  "Withdraw   /ugo %withdraw ~zod"
-  =/  h8  "Move       /ugo %move game-id(e.g. ~2023.5.2..08.48.59..110d) [19 19]"
-  =/  h9  "Pass       /ugo %pass game-id(e.g. ~2023.5.2..08.48.59..110d)"
-  =/  h10  "Resign     /ugo %resign game-id(e.g. ~2023.5.2..08.48.59..110d)"
-  =/  h11  "Look       /ugo %look game-id(e.g. ~2023.5.2..08.48.59..110d)"
-  =/  h12  "           %look will return an image of the game board with the current state of play"
-  =/  h13  "Help       /ugo %help"
+  =/  h1  'Available actions are: %challenge, %accept, %decline, %withdraw, %move, %pass, %resign, and %look.'
+  =/  h2  'Challenge: /ugo %challenge ~zod name=@t komi=@rs handicap=@ud size=@ud order=@tas'
+  =/  h3  '           "order" is the order of play, and can be %random, %challenger, or %challenged'
+  =/  h4  '           name, komi, handicap, size and order will use default values if not supplied'
+  =/  h5  'Accept:    /ugo %accept ~zod'
+  =/  h6  'Decline:   /ugo %decline ~zod'
+  =/  h7  'Withdraw   /ugo %withdraw ~zod'
+  =/  h8  'Move       /ugo %move game-id (e.g. ~2023.5.2..08.48.59..110d) [19 19]'
+  =/  h9  'Pass       /ugo %pass game-id (e.g. ~2023.5.2..08.48.59..110d)'
+  =/  h10  'Resign     /ugo %resign game-id (e.g. ~2023.5.2..08.48.59..110d)'
+  =/  h11  'Look       /ugo %look game-id (e.g. ~2023.5.2..08.48.59..110d)'
+  =/  h12  '           %look will return an image of the game board with the current state of play'
+  =/  h13  'Help       /ugo %help'
 
-  =/  help-p  `tape`(zing (limo [h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 ~]))
-  (pure:m !>([(crip help-p) vase.bird]))
+  =/  b  break+~  
+  =/  content-list  `(list inline:chat)`[h1 b b h2 b h3 b h4 b b h5 b b h6 b b h7 b b h8 b b h9 b b h10 b b h11 b h12 b b h13 ~]
+  =/  repl  `reply`[%story *(list block:chat) content-list]
+
+  (pure:m !>([repl vase.bird]))
 ==
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::

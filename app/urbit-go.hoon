@@ -17,7 +17,7 @@
 
 /+  default-agent, dbug, urbit-go
 =,  urbit-go
-!:
+::!:
 |%
 +$  versioned-state
     $%  state-0
@@ -155,11 +155,14 @@
       =?  color  =(white.game src.bowl)  %white :: if moving player is white, change color to white
       =/  output=[@tas (unit go-game)]  (make-move game position.action color)
       ?~  +3.output
-        ~|  +2.output  !! :: output error
-      ::  ~&  "returning value: {<+2.output>} via a poke-ack"
-      ::  :_  this
-      ::  :~  [%give %poke-ack `~[leaf+"Urbit-go error: {<+2.output>}"]]
-      ::  ==
+        ::~|  +2.output  !! :: output error
+        ~|  (crip ;:(weld "#### " (trip +2.output) " ####"))  !! :: output error
+
+        :: Would like to do this, but the error message doesn't go through to the poking ship
+        :: and if the poking ship is our ship, then we don't even get a nack, we get an ack!!
+        :::_  this
+        :::~  [%give %poke-ack `~[leaf+"Urbit-Go error:" leaf+(trip +2.output)]]
+        ::==
       =.  game  (need +3.output)
       =.  pass.game  0 :: set pass to 0 since a move was done
       =.  active-games  (~(put by active-games) id.action game) :: otherwise update game state
