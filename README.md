@@ -11,7 +11,7 @@ You must have %gato installed in order for Go Chat to work.
 
 #### How to start the chat
 
-After installing, in the dojo:
+After installing, in the dojo:  
 :gato &add ['ugo' [%urbit-go-chat %go-bot] !>(~)]
 
 (for help on how to use %gato: https://github.com/midsum-salrux/gato)
