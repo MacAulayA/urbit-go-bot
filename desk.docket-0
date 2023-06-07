@@ -1,8 +1,8 @@
 :~
-title+'GoBot'
-info+'A clone of Urbit-Go, with a chatbot for Group chat'
+title+'GoChat'
+info+'A clone of Urbit-Go, now playable through Group chat'
 color+0xd3.7504
-base+'urbit-go-bot'
+base+'urbit-go-chat'
 glob-ames+[~zod 0v0]
 version+[1 0 0]
 website+'https://github.com/MacAulayA/urbit-go-bot'

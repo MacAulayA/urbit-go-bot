@@ -15,6 +15,11 @@
 :: You should have received a copy of the GNU General Public License
 :: along with urbit-go. If not, see <https://www.gnu.org/licenses/>.
 
+
+:: Jun 2023 urbit-go modified by wolfun-solnym to provide Group chat
+:: access to the game/. 
+
+
 /+  default-agent, dbug, urbit-go
 =,  urbit-go
 ::!:
