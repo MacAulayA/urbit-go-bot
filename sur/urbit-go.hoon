@@ -277,13 +277,12 @@
   =/  i3  ;:(weld "<tspan x='110' y='47'>White: " (scow %p white.game) "</tspan>")
   =/  i4  ;:(weld "<tspan x='110' y='53'>Komi: " (scow %rs komi.game) "</tspan>")
   =/  i5  ;:(weld "<tspan x='110' y='59'>Handicap: " (scow %ud handicap.game) "</tspan>")
-  
-  =/  i7  ?~(result.game "" ;:(weld "<tspan x='110' y='71' fill='red'>" (scow %p +>+>.result.game) " wins!</tspan>"))
+    =/  i7  ?~(result.game "" ;:(weld "<tspan x='110' y='71' fill='red'>" (scow %p +>+>.result.game) " wins!</tspan>"))
   =/  i8  ?~(result.game "" "<tspan x='110' y='77'>Score:</tspan>")
   =/  i9  ?~(result.game "" ;:(weld "<tspan x='120' y='83'> White:" (scow %rs +>-.result.game) "</tspan>"))
   =/  i10  ?~(result.game "" ;:(weld "<tspan x='120' y='89'> Black:" (scow %rs +<.result.game) "</tspan>"))
   =/  i11  "</text>"
-  =/  info  ;:(weld i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11)
+  =/  info  ;:(weld i1 i2 i3 i4 i5 i7 i8 i9 i10 i11)
 
   ::  Turn (black on odd, white on even)
     =/  t  turn.game
