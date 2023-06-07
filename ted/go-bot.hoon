@@ -94,7 +94,7 @@
   =/  order  ?:(|(=(od %random) =(od %challenger) =(od %challenged)) od %random)  :: Values are %random, %challenger, %challenged
 
   ;<  our=@p   bind:m  get-our
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%challenge name=name who=challenged komi=komi handicap=handicap size=size order=order])])  ::check this poke structure
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%challenge name=name who=challenged komi=komi handicap=handicap size=size order=order])])  ::check this poke structure
   (pure:m !>([(crip ;:(weld "Go: " (scow %p challenged) " you have been challenged by " (scow %p our) "!")) vase.bird]))
 ::
 ::  Accept game invitation
@@ -102,10 +102,10 @@
   =/  challenger-a  `@p`(slav %p (crip (weld "~" (parse-input "~" text-tape "error"))))
 
   ;<  our=@p   bind:m  get-our
-  ;<  challenge=(list go-challenge:urbit-go)  bind:m  (scry [(list go-challenge:urbit-go)] `path`['gx' 'urbit-go' 'challenges' 'noun' ~])
+  ;<  challenge=(list go-challenge:urbit-go)  bind:m  (scry [(list go-challenge:urbit-go)] `path`['gx' 'urbit-go-chat' 'challenges' 'noun' ~])
   =/  challenge-0  (snag 0 challenge)  :: first challenge in list
   =/  game-id=@dau  game-id.challenge-0
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%accept-challenge who=challenger-a])])
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%accept-challenge who=challenger-a])])
   (pure:m !>([(crip ;:(weld "Go: game accepted. " (scow %p our) " plays " (scow %p challenger-a) " , with game-id: " (scow %da game-id))) vase.bird]))
 ::
 ::  Decline game invitation
@@ -113,7 +113,7 @@
   =/  challenger-d  `@p`(slav %p (crip (weld "~" (parse-input "~" text-tape "error"))))
 
   ;<  our=@p   bind:m  get-our
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%decline-challenge who=challenger-d])])
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%decline-challenge who=challenger-d])])
   (pure:m !>(['Go: game declined' vase.bird]))
 ::
 ::  Withdraw game invitation
@@ -121,7 +121,7 @@
   =/  challenged-d  `@p`(slav %p (crip (weld "~" (parse-input "~" text-tape "error"))))
 
   ;<  our=@p   bind:m  get-our
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%withdraw-challenge who=challenged-d])])
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%withdraw-challenge who=challenged-d])])
   (pure:m !>(['Go: challenge withdrawn' vase.bird]))
 ::
 ::  Make a move
@@ -131,7 +131,7 @@
   =/  game-id-m  `@dau`(slav %da game-id-t)
 
   :: Scry for game data in order to get name of host
-  ;<  game=go-game:urbit-go  bind:m  (scry [go-game:urbit-go] `path`['gx' 'urbit-go' 'game' game-id-t 'noun' ~])
+  ;<  game=go-game:urbit-go  bind:m  (scry [go-game:urbit-go] `path`['gx' 'urbit-go-chat' 'game' game-id-t 'noun' ~])
 
   :: get move position
   =/  posn-tape  (slag (need (find "[" text-tape)) text-tape)        :: position data "[x y]"
@@ -147,7 +147,7 @@
   ?+    -.result  ~|  %thread-fail  !! 
       %done
     =/  move-msg  (crip ;:(weld "Go: " (scow %p our) " moved to " posn-tape))
-    (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
+    (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go-chat/game/" (scow %da game-id-m) "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [[move-msg] ~]]] vase.bird]))
     ::
       %fail
     =/  move-msg  (crip ;:(weld "Go: Sorry " (scow %p our) ", illegal move: " (trip +.result)))
@@ -159,7 +159,7 @@
   =/  game-id-p  `@dau`(slav %da (crip (weld "~" (parse-input "~" text-tape "error"))))
 
   ;<  our=@p   bind:m  get-our
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%pass id=game-id-p])])
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%pass id=game-id-p])])
   (pure:m !>([(crip (weld (weld "Go: " (scow %p our)) " passed.")) vase.bird]))
 ::
 ::  Resign the game
@@ -167,7 +167,7 @@
   =/  game-id-r  `@dau`(slav %da (crip (weld "~" (parse-input "~" text-tape "error"))))
 
   ;<  our=@p   bind:m  get-our
-  ;<  ~        bind:m  (poke [our %urbit-go] [%urbit-go-action !>([%resign id=game-id-r])])
+  ;<  ~        bind:m  (poke [our %urbit-go-chat] [%urbit-go-action !>([%resign id=game-id-r])])
   (pure:m !>([(crip (weld (weld "Go: " (scow %p our)) " resigned.")) vase.bird]))
 ::
 ::  View the state of the board
@@ -176,7 +176,7 @@
 
   :: Scry urbit-go directly, as I've added an svg return type
   ;<  now=@da   bind:m  get-time
-  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go/game/" game-id "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [['State of play'] ~]]] vase.bird]))
+  (pure:m !>([`reply`[%story [[[%image (crip ;:(weld "/~/scry/urbit-go-chat/game/" game-id "/" (scow %da now) ".svg")) 300 300 'go board'] ~] [['State of play'] ~]]] vase.bird]))
 ::
 ::  Get help on actions
     %help

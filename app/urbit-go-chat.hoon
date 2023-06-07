@@ -45,7 +45,7 @@
     default   ~(. (default-agent this %|) bowl)
 ::
 ++  on-init
-  ~&  >  'urbit-go initialized'
+  ~&  >  'urbit-go-chat initialized'
   ^-  (quip card _this)
   `this
 ++  on-save
@@ -55,7 +55,7 @@
 ++  on-load
   |=  old-state-vase=vase
   ^-  (quip card _this)
-  ~&  >  'urbit-go reloaded'
+  ~&  >  'urbit-go-chat reloaded'
   =/  old-state  !<(versioned-state old-state-vase)
   ?-  -.old-state
     %0  `this(state old-state)
@@ -93,8 +93,8 @@
     =.  board-size.challenge  size.action
     =.  goes-first.challenge  order.action
     :_  this
-    :~  [%pass /challenge %agent [who.action %urbit-go] %poke %urbit-go-action !>([%send-challenge challenge])]
-      [%pass /challenge %agent [src.bowl %urbit-go] %poke %urbit-go-action !>([%send-challenge challenge])]
+    :~  [%pass /challenge %agent [who.action %urbit-go-chat] %poke %urbit-go-action !>([%send-challenge challenge])]
+      [%pass /challenge %agent [src.bowl %urbit-go-chat] %poke %urbit-go-action !>([%send-challenge challenge])]
     ==
     %send-challenge
     ?:  (check-existing-challenge challenges challenger.challenge.action challenged.challenge.action) :: check if challenge already exists
@@ -114,14 +114,14 @@
     =/  game-id=@dau  game-id.challenge
     =.  challenges  (oust [(need (find ~[challenge] challenges)) 1] challenges) :: remove challenge from our challenge list
     :_  this
-    :~  [%pass /game/active/(scot %dau game-id)/wire %agent [who.action %urbit-go] %watch /game/active/(scot %dau game-id)]
+    :~  [%pass /game/active/(scot %dau game-id)/wire %agent [who.action %urbit-go-chat] %watch /game/active/(scot %dau game-id)]
     ==
     %decline-challenge
     ?.  =(our.bowl who.action) :: check if this is being sent to us or if this is a local poke
       ?>  =(src.bowl our.bowl) :: in this case we didnt make the challenge, make sure we sent this
       =.  challenges  (withdraw challenges who.action src.bowl) :: withdraw and decline are the same thing
       :_  this
-      :~  [%pass /decline/challenge %agent [who.action %urbit-go] %poke %urbit-go-action !>([%decline-challenge who.action])] :: send same poke to other player
+      :~  [%pass /decline/challenge %agent [who.action %urbit-go-chat] %poke %urbit-go-action !>([%decline-challenge who.action])] :: send same poke to other player
       ==
     =.  challenges  (withdraw challenges who.action src.bowl) :: otherwise just remove the challenge if it exists
     `this
@@ -130,7 +130,7 @@
       ?>  =(src.bowl our.bowl) :: in this case we didnt make the challenge, make sure we sent this
       =.  challenges  (withdraw challenges src.bowl who.action) :: withdraw and decline are the same thing
       :_  this
-      :~  [%pass /withdraw/challenge %agent [who.action %urbit-go] %poke %urbit-go-action !>([%withdraw-challenge who.action])] :: send same poke to other player
+      :~  [%pass /withdraw/challenge %agent [who.action %urbit-go-chat] %poke %urbit-go-action !>([%withdraw-challenge who.action])] :: send same poke to other player
       ==
     =.  challenges  (withdraw challenges src.bowl who.action) :: otherwise just remove the challenge if it exists
     `this
@@ -147,7 +147,7 @@
       :~  [%give %fact ~[/game/active/(scot %dau id.action)] %urbit-go-game !>(game)] :: send finished game to other player
       ==
     :_  this
-    :~  [%pass /resign %agent [host.game %urbit-go] %poke %urbit-go-action !>([%resign id.action])] :: send to host
+    :~  [%pass /resign %agent [host.game %urbit-go-chat] %poke %urbit-go-action !>([%resign id.action])] :: send to host
     ==
     %move
     =/  game-candidate=(unit go-game)  (~(get by active-games) id.action)
@@ -175,7 +175,7 @@
       :~  [%give %fact ~[/game/active/(scot %dau id.action)] %urbit-go-game !>(game)] :: send update
       ==
     :_  this
-    :~  [%pass /move %agent [host.game %urbit-go] %poke %urbit-go-action !>([%move id.action position.action])] :: send to host
+    :~  [%pass /move %agent [host.game %urbit-go-chat] %poke %urbit-go-action !>([%move id.action position.action])] :: send to host
     ==
     %pass
     =/  game-candidate=(unit go-game)  (~(get by active-games) id.action) :: check if valid active game
@@ -191,7 +191,7 @@
       :~  [%give %fact ~[/game/active/(scot %dau id.action)] %urbit-go-game !>(game)]
       ==
     :_  this
-    :~  [%pass /pass %agent [host.game %urbit-go] %poke %urbit-go-action !>([%pass id.action])] :: send to host
+    :~  [%pass /pass %agent [host.game %urbit-go-chat] %poke %urbit-go-action !>([%pass id.action])] :: send to host
     ==
     %dead-stones
     =/  game-candidate=(unit go-game)  (~(get by active-games) id.action) :: check if valid active game
@@ -222,7 +222,7 @@
       :~  [%give %fact ~[/game/active/(scot %dau id.action)] %urbit-go-game !>(game)] :: send updated game to other player
       ==
     :_  this
-    :~  [%pass /dead/stones %agent [host.game %urbit-go] %poke %urbit-go-action !>([%dead-stones id.action stones.action])] :: send to host
+    :~  [%pass /dead/stones %agent [host.game %urbit-go-chat] %poke %urbit-go-action !>([%dead-stones id.action stones.action])] :: send to host
     ==
   ==
 ==
@@ -328,7 +328,7 @@
         =.  archived-games  (~(put by archived-games) game-id.game game) :: add game to archive
         =.  active-games  (~(del by active-games) game-id.game) :: removes game from active-games
         :_  this
-        :~  [%pass /game/active/(scot %dau game-id.game)/wire %agent [host.game %urbit-go] %leave ~]
+        :~  [%pass /game/active/(scot %dau game-id.game)/wire %agent [host.game %urbit-go-chat] %leave ~]
             [%give %kick ~[/game/active/(scot %dau game-id.game)] ~]
         ==
       ==
@@ -336,7 +336,7 @@
       =/  game-id=@dau  (slav %da i.t.t.wire)
       ~&  >  'kicked. attempting to resubscribe...'
       :_  this
-      :~  [%pass /game/active/(scot %dau game-id)/wire %agent [src.bowl %urbit-go] %watch /game/active/(scot %dau game-id)]
+      :~  [%pass /game/active/(scot %dau game-id)/wire %agent [src.bowl %urbit-go-chat] %watch /game/active/(scot %dau game-id)]
       ==
     ==
   ==

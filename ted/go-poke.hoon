@@ -48,5 +48,5 @@
 =/  m  (strand ,vase)
 ^-  form:m
 
-;<  v=vase  bind:m  (custom-poke [-.args %urbit-go] [%urbit-go-action +.args])
+;<  v=vase  bind:m  (custom-poke [-.args %urbit-go-chat] [%urbit-go-action +.args])
 (pure:m !>(v))
