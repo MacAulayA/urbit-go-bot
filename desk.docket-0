@@ -1,11 +1,10 @@
 :~
-title+'Urbit Go'
-info+'The abstract board-game Go, now on Urbit'
+title+'GoBot'
+info+'A clone of Urbit-Go, with a chatbot for Group chat'
 color+0xd3.7504
-image+'https://winnermittec.space/icon.svg'
-base+'urbit-go'
+base+'urbit-go-bot'
 glob-ames+[~zod 0v0]
 version+[1 0 0]
-website+'https://winnermittec.space'
+website+'https://github.com/MacAulayA/urbit-go-bot'
 license+'GPLv3'
 ==
